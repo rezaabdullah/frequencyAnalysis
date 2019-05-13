@@ -11,7 +11,7 @@ Created on Sat Apr 6 19:36:08 2019
 #
 ###############################################################################
 
-#import sys
+import sys
 import numpy as np
 import pandas as pd
 from pyspark.sql import SparkSession
@@ -45,7 +45,7 @@ mainDf = spark.read.option("header", "True").csv(filePath)
 
 # Show schema
 mainDf.printSchema()
-mainDf.show()
+#mainDf.show()
 
 #mainDf.select("idfa").count()   # Total IDFAs: 162,015,992
 #mainDf.select("idfa").distinct().count() # Unique IDFAs: 699,020
@@ -62,9 +62,8 @@ sampleDf = mainDf.selectExpr("idfa as advertisement_id",
                                 "round(cast(longitude as float), 4) longitude",
                                 "round(cast(horizontalaccuracy as float), 2) horizontal_accuracy",
                                 "cast(cast(timestamp as int) as timestamp) date_time")
-#locationDf.show()
 sampleDf.printSchema()
-sampleDf.show()
+#sampleDf.show()
 
 ###############################################################################
 #
@@ -113,7 +112,7 @@ adIdDistance = sampleDf.withColumn("distance", \
                    sampleDf.latitude, sampleDf.longitude))
 
 # Show distance
-adIdDistance.show()
+#adIdDistance.show()
 
 # Filter IDFAs (advertisement_id) that are within 1km radius of billboard
 allAdId = adIdDistance.filter(adIdDistance.distance <= 1)
@@ -143,13 +142,9 @@ allAdIdFilter = allAdIdHour.filter((allAdIdHour.date == "2019-02-01") &
 
 # Drop horizontal accuracy since it's redundant for future analysis
 allAdIdClean = allAdIdFilter.drop("horizontal_accuracy", "date", "latitude", "longitude")
-allAdId = allAdIdClean.toPandas()
 
 # Aggregate advertisement_id by hour
-allAdIdGroup = allAdId.groupBy("broadcast_hour", "advertisement_id").agg(count("advertisement_id"))
+allAdIdGroup = allAdIdClean.groupBy("broadcast_hour", "advertisement_id").agg(count("advertisement_id"))
 
-bukitBintang = allAdIdAgg.toPandas()
-bukitBintang.to_csv("bukit_bintang.csv", index = False)
-
-totalAdId = allAdIdAgg.select("advertisement_id").count()   # 8,543, 35608
-totalUniqueAdId = allAdIdAgg.select("advertisement_id").distinct().count()  #3,310, 12876
+totalAdId = allAdIdGroup.select("advertisement_id").count()   # 8,543, 35608
+totalUniqueAdId = allAdIdGroup.select("advertisement_id").distinct().count()  #3,310, 12876
